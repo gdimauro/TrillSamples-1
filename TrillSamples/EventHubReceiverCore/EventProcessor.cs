@@ -121,12 +121,13 @@ namespace EventHubReceiver
     {
       long lastSeq = 0;
       Console.Title = (ReceivedMessageCount += messages.Count()).ToString();
+      Console.Write(".");
       foreach (var eventData in messages)
       {
         var message = BinarySerializer.DeserializeStreamEventSampleEvent(eventData.Body.ToArray());
         lastSeq = eventData.SystemProperties.SequenceNumber;
-        Task.Delay(5).Wait();
-        this.input.OnNext(message);
+        //Task.Delay(5).Wait();
+        //this.input.OnNext(message);
       }
 
       if (this.checkpointStopWatch.Elapsed > TimeSpan.FromSeconds(10))
