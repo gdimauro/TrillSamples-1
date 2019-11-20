@@ -28,17 +28,17 @@ namespace AggregateExample
         [DisplayName("CountExample")]
         private static void CountExample()
         {
-            var input = values.ToObservable().ToStreamable();
-            Console.WriteLine("Input =");
-            input.ToStreamEventObservable().ForEachAsync(e => Console.WriteLine(e)).Wait();
+              var input = values.ToObservable().ToStreamable();
+              Console.WriteLine("Input =");
+              input.ToStreamEventObservable().ForEachAsync(e => Console.WriteLine(e)).Wait();
 
-            // Report the number of events.
-            Console.WriteLine();
-            Console.WriteLine("Query: input.Count()");
-            var output = input.Count();
+              // Report the number of events.
+              Console.WriteLine();
+              Console.WriteLine("Query: input.Count()");
+              var output = input.Count();
 
-            Console.WriteLine("Output =");
-            output.ToStreamEventObservable().ForEachAsync(e => Console.WriteLine(e)).Wait();
+              Console.WriteLine("Output =");
+              output.ToStreamEventObservable().ForEachAsync(e => Console.WriteLine(e)).Wait();
 
             Console.ReadLine();
         }

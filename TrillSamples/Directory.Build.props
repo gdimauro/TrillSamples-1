@@ -2,10 +2,10 @@
 
   <!-- Code Analysis -->
   <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+    <!--<PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
+    </PackageReference>-->
   </ItemGroup>
   <PropertyGroup>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)\TrillSamples.ruleset</CodeAnalysisRuleSet>
@@ -20,6 +20,14 @@
   <!-- Every sample includes Trill -->
   <ItemGroup>
     <PackageReference Include="Trill" Version="2019.5.1.1" />
+<!--
+    <Reference Include="Microsoft.StreamProcessing">
+      <HintPath>..\..\..\Trill\bin\AnyCPU\Release\netstandard2.1\Microsoft.StreamProcessing.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.StreamProcessing.Provider">
+      <HintPath>..\..\..\Trill\bin\AnyCPU\Release\netstandard2.1\Microsoft.StreamProcessing.Provider.dll</HintPath>
+    </Reference>
+-->
   </ItemGroup>
 
 </Project>
