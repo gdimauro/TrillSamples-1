@@ -121,15 +121,14 @@ namespace EventHubReceiver
     {
       long lastSeq = 0;
       Console.Title = (ReceivedMessageCount += messages.Count()).ToString();
-      Console.Write(".");
       foreach (var eventData in messages)
       {
+        Console.Write(".");
         var message = BinarySerializer.DeserializeStreamEventSampleEvent(eventData.Body.ToArray());
         lastSeq = eventData.SystemProperties.SequenceNumber;
         //Task.Delay(5).Wait();
         //this.input.OnNext(message);
       }
-
       if (this.checkpointStopWatch.Elapsed > TimeSpan.FromSeconds(10))
       {
         Console.WriteLine("Taking checkpoint");
@@ -201,8 +200,8 @@ namespace EventHubReceiver
         if (token == null)
           break;
       }
-      this.checkpointStopWatch.Restart();
 #endif
+      this.checkpointStopWatch.Restart();
       return Task.CompletedTask;
     }
   }
