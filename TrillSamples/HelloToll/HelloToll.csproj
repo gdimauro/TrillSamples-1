@@ -21,14 +21,14 @@
     <PackageReference Include="System.Reactive" Version="4.2.0" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <Reference Include="Microsoft.StreamProcessing">
       <HintPath>..\..\..\Trill\bin\AnyCPU\Debug\netstandard2.0\Microsoft.StreamProcessing.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.StreamProcessing.Provider">
       <HintPath>..\..\..\Trill\bin\AnyCPU\Debug\netstandard2.0\Microsoft.StreamProcessing.Provider.dll</HintPath>
     </Reference>
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <None Update="System.Linq.Expressions.dll">

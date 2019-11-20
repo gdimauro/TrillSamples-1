@@ -19,7 +19,7 @@
   
   <!-- Every sample includes Trill -->
   <ItemGroup>
-    <PackageReference Include="Trill" Version="2019.5.1.1" />
+    <PackageReference Include="Trill" Version="2019.9.25.1" />
 <!--
     <Reference Include="Microsoft.StreamProcessing">
       <HintPath>..\..\..\Trill\bin\AnyCPU\Release\netstandard2.1\Microsoft.StreamProcessing.dll</HintPath>

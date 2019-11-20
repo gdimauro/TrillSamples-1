@@ -5,8 +5,15 @@ using System.Text;
 
 namespace EventHubSender
 {
-  public class MeasureT1
+  public class Measure
   {
+    public string Type { get; set; }
+  }
+
+  public class MeasureT1 : Measure
+  {
+    public MeasureT1() => base.Type = nameof(MeasureT1);
+
     /// <summary>
     /// è il codice univoco di identificazione della risorsa che genera la misura, può essere
     /// visto come un ID combinato ed è formato da 8 numeri in sequenza secondo lo schema
@@ -52,8 +59,10 @@ namespace EventHubSender
     public int id { get; set; }
   }
 
-  public class MeasureT3
+  public class MeasureT3 : Measure
   {
+    public MeasureT3() => base.Type = nameof(MeasureT3);
+
     /// <summary>
     /// codice univoco di identificazione della risorsa che genera la misura
     /// </summary>
@@ -81,8 +90,10 @@ namespace EventHubSender
   /// Rappresentano i dati relativi a warning e agli allarmi.La variabile è gestita ad eventi, quando
   /// un allarme o warning cambia stato(da true a false o viceversa), viene inviato un dato.
   /// </summary>
-  public class MeasureT4
+  public class MeasureT4 : Measure
   {
+    public MeasureT4() => base.Type = nameof(MeasureT4);
+
     /// <summary>
     /// Codice univoco di identificazione della risorsa che genera la misura
     /// </summary>

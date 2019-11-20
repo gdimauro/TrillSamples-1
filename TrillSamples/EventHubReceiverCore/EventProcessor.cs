@@ -13,8 +13,10 @@ using System.Threading.Tasks;
 using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.EventHubs.Processor;
 using Microsoft.StreamProcessing;
+#if USE_BLOB_STORAGE
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+#endif
 using Newtonsoft.Json;
 using static BinarySerializer;
 
@@ -29,7 +31,9 @@ namespace EventHubReceiver
     private static readonly string StorageConnectionString = Program.StorageConnectionString;
 
     private Stopwatch checkpointStopWatch;
+#if USE_BLOB_STORAGE
     private CloudBlobContainer checkpointContainer;
+#endif
     private Subject<StreamEvent<SampleEvent>> input;
     private QueryContainer queryContainer;
     private Microsoft.StreamProcessing.Process queryProcess;
@@ -59,6 +63,7 @@ namespace EventHubReceiver
       this.checkpointStopWatch = new Stopwatch();
       this.checkpointStopWatch.Start();
 
+#if USE_BLOB_STORAGE
       var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
       var blobClient = storageAccount.CreateCloudBlobClient();
       this.checkpointContainer = blobClient.GetContainerReference("checkpoints");
@@ -82,6 +87,7 @@ namespace EventHubReceiver
         }
       }
       else
+#endif
       {
         Console.WriteLine($"Clean start of query");
         CreateQuery();
@@ -126,6 +132,7 @@ namespace EventHubReceiver
       if (this.checkpointStopWatch.Elapsed > TimeSpan.FromSeconds(10))
       {
         Console.WriteLine("Taking checkpoint");
+#if USE_BLOB_STORAGE
         var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
         var blobClient = storageAccount.CreateCloudBlobClient();
         CloudBlobContainer container = blobClient.GetContainerReference("checkpoints");
@@ -135,7 +142,7 @@ namespace EventHubReceiver
         this.queryProcess.Checkpoint(blobStream);
         blobStream.Flush();
         blobStream.Close();
-
+#endif
         return context
             .CheckpointAsync()
             .ContinueWith(t => DeleteOlderCheckpoints(context.PartitionId + "-" + lastSeq));
@@ -170,6 +177,7 @@ namespace EventHubReceiver
     /// <returns></returns>
     private Task DeleteOlderCheckpoints(string checkpointFile)
     {
+#if USE_BLOB_STORAGE
       var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
       var blobClient = storageAccount.CreateCloudBlobClient();
       CloudBlobContainer container = blobClient.GetContainerReference("checkpoints");
@@ -193,6 +201,7 @@ namespace EventHubReceiver
           break;
       }
       this.checkpointStopWatch.Restart();
+#endif
       return Task.CompletedTask;
     }
   }
