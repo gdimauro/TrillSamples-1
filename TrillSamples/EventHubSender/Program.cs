@@ -17,6 +17,8 @@ namespace EventHubSender
     private const string EventHubName = "main";
     private static EventHubClient eventHubClient;
 
+    public static string[] ErrorCodes = { "0030", "0033", "0035", "0330", "0000", "1130", "0830", "3430", "7630" };
+
     public static void Main(string[] args)
     {
       MainAsync(args).GetAwaiter().GetResult();
@@ -132,7 +134,7 @@ namespace EventHubSender
 #else
       for (var i = 0; i < numMessagesToSend; i++)
       {
-        var uri = (1002030 + i).ToString();
+        var uri = (1002030 + 2000000 + i).ToString();
         var min = 200 + ((float)rand.Next(100, 500) / 10.0f);
         var now = DateTime.Now;
         var value = 23f + (float)rand.Next(10) / 10f;
@@ -162,24 +164,17 @@ namespace EventHubSender
           URI = uri,
           Time = now,
           AW = (Byte)(rand.Next(4) == 2 ? 1 : 0),
+          Code = ErrorCodes[rand.Next(ErrorCodes.Length)],
           Flag = (Byte)(rand.Next(4) <= 2 ? 1 : 0)
         };
 
         try
         {
-          //var m1 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt1);
-          //var m3 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt3);
-          //var m4 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt4);
-
           Console.Write(".");
-          //totalMessages += Add(ref batch, m1);
-          //totalMessages += Add(ref batch, m3);
-          //totalMessages += Add(ref batch, m4);
 
           totalMessages += Add(ref batch, mt1);
           totalMessages += Add(ref batch, mt3);
           totalMessages += Add(ref batch, mt4);
-
 
           Console.Title = totalMessages.ToString();
 
