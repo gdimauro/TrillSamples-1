@@ -3,30 +3,56 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace EventHubSender
+namespace EventHubSample.Model
 {
-  public class Measure
+  public interface IMeasure
   {
-    public string Type { get; set; }
+    public string URI { get; set; }
+    public DateTime Time { get; set; }
+    //public MeasureData Data { get; set; }
   }
 
-  public class MeasureT1 : Measure
-  {
-    public MeasureT1() => base.Type = nameof(MeasureT1);
+  public class MeasureData { }
 
+  [JsonObject]
+  public class Measure : IMeasure
+  {
     /// <summary>
     /// è il codice univoco di identificazione della risorsa che genera la misura, può essere
     /// visto come un ID combinato ed è formato da 8 numeri in sequenza secondo lo schema
     /// XX-YYY-ZZZ dove XX è relativo alla linea che si sta considerando, YYY al test bench, ZZZ
     /// alla stazione.
     /// </summary>
-    [JsonProperty("URI")]
+    [JsonProperty("uri")]
     public string URI { get; set; }
     /// <summary>
     /// contiene il timestamp dell’ultima misura effettuata
     /// </summary>
-    [JsonProperty("time")]
+    [JsonProperty("timeStamp")]
     public DateTime Time { get; set; }
+    //[JsonProperty("data")]
+    //public MeasureData Data { get; set; }
+  }
+
+  //public class Measure<T> : Measure
+  //    where T : MeasureData
+  //{
+  //  [JsonIgnore]
+  //  public T ExtraData
+  //  {
+  //    get
+  //    {
+  //      return (T)this.Data;
+  //    }
+  //    set
+  //    {
+  //      this.Data = value;
+  //    }
+  //  }
+  //}
+
+  public class MeasureT1 : Measure
+  {
     /// <summary>
     /// contiene la media sulle nSample misure
     /// </summary>
@@ -61,18 +87,6 @@ namespace EventHubSender
 
   public class MeasureT3 : Measure
   {
-    public MeasureT3() => base.Type = nameof(MeasureT3);
-
-    /// <summary>
-    /// codice univoco di identificazione della risorsa che genera la misura
-    /// </summary>
-    [JsonProperty("URI")]
-    public string URI { get; set; }
-    /// <summary>
-    /// contiene il timestamp dell’avvenimento dell’evento
-    /// </summary>
-    [JsonProperty("time")]
-    public DateTime Time { get; set; }
     /// <summary>
     /// stringa relativa all’evento che si è generato
     /// </summary>
@@ -92,18 +106,6 @@ namespace EventHubSender
   /// </summary>
   public class MeasureT4 : Measure
   {
-    public MeasureT4() => base.Type = nameof(MeasureT4);
-
-    /// <summary>
-    /// Codice univoco di identificazione della risorsa che genera la misura
-    /// </summary>
-    [JsonProperty("URI")]
-    public string URI { get; set; }
-    /// <summary>
-    /// Timestamp dell’allarme
-    /// </summary>
-    [JsonProperty("time")]
-    public DateTime Time { get; set; }
     /// <summary>
     /// Allarme/warning
     /// </summary>

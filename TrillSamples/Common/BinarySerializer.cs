@@ -52,8 +52,14 @@ public static class BinarySerializer
 
   public static byte[] Serialize<T>(StreamEvent<T> message)
   {
-    var result = JsonConvert.SerializeObject(message.Payload);
+    var result = JsonConvert.SerializeObject(message.Payload, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None });
     return Encoding.UTF7.GetBytes(result);
+  }
+
+  public static byte[] Serialize<T>(T message)
+  {
+    var result = JsonConvert.SerializeObject(message, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None });
+    return Encoding.ASCII.GetBytes(result);
   }
 
   public static StreamEvent<T> DeserializeStreamEventSampleEvent<T>(byte[] data)
@@ -63,7 +69,7 @@ public static class BinarySerializer
     var payload = default(T);
     try
     {
-      payload = JsonConvert.DeserializeObject<T>(strData);
+      payload = JsonConvert.DeserializeObject<T>(strData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All });
     }
     catch
     {
