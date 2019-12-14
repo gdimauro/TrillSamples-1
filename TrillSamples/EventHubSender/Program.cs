@@ -31,7 +31,7 @@ namespace EventHubSender
 
       eventHubClient = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
 
-      await SendMessagesToEventHub(1000000);
+      await SendMessagesToEventHub(100000000);
 
       await eventHubClient.CloseAsync();
 
@@ -43,7 +43,7 @@ namespace EventHubSender
     {
       int retval = 0;
       var data = new EventData(BinarySerializer.Serialize(msg));
-      data.Properties.Add("Table", typeof(T).Name);
+      data.Properties.Add("Table", typeof(T).Name.Replace("MeasureT", "MeasuresT"));
       data.Properties.Add("Format", "json");
       data.Properties.Add("IngestionMappingReference", $"Map{typeof(T).Name}");
       //var back = BinarySerializer.DeserializeStreamEventSampleEvent(data);
