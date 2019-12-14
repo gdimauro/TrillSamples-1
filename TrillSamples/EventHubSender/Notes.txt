@@ -1,0 +1,11 @@
+﻿
+
+.create table MeasuresT1 (URI: string, timeStamp: datetime, mean: float, std: decimal, min: float, max: float, nSample: int, ['id']: string) 
+.create table MeasuresT1 ingestion json mapping 'MapMeasureT1' '[{"column":"URI","path":"$.uri","datatype":"string"}, {"column":"timeStamp","path":"$.timeStamp","datatype":"datetime"}, {"column":"mean","path":"$.mean","datatype":"float"},{"column":"std","path":"$.std","datatype":"decimal"},{"column":"min","path":"$.min","datatype":"float"},{"column":"max","path":"$.max","datatype":"float"},{"column":"nSample","path":"$.nSample","datatype":"int"},{"column":"id","path":"$.id","datatype":"string"}]'
+
+.create table MeasuresT3 (URI: string, timeStamp: datetime, event: string, val: decimal) 
+.create table MeasuresT3 ingestion json mapping 'MapMeasureT3' '[{"column":"URI","path":"$.uri","datatype":"string"}, {"column":"timeStamp","path":"$.timeStamp","datatype":"datetime"}, {"column":"event","path":"$.event","datatype":"string"},{"column":"val","path":"$.val","datatype":"decimal"}]'
+
+.create table MeasuresT4 (URI: string, timeStamp: datetime, aw: string, code: string, flag: bool) 
+.create table MeasuresT4 ingestion json mapping 'MapMeasureT4' '[{"column":"URI","path":"$.uri","datatype":"string"}, {"column":"timeStamp","path":"$.timeStamp","datatype":"datetime"}, {"column":"aw","path":"$.aw","datatype":"string"},{"column":"code","path":"$.code","datatype":"string"},{"column":"flag","path":"$.flag","datatype":"bool"}]'
+

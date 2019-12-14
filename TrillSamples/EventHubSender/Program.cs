@@ -4,6 +4,7 @@
 // *********************************************************************
 using System;
 using System.Threading.Tasks;
+using EventHubSample.Model;
 using Microsoft.Azure.EventHubs;
 using Microsoft.StreamProcessing;
 using static BinarySerializer;
@@ -30,7 +31,7 @@ namespace EventHubSender
 
       eventHubClient = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
 
-      await SendMessagesToEventHub(100);
+      await SendMessagesToEventHub(1000000);
 
       await eventHubClient.CloseAsync();
 
@@ -38,20 +39,47 @@ namespace EventHubSender
       Console.ReadLine();
     }
 
-    private static int Add<T>(EventDataBatch batch, StreamEvent<T> msg)
+    private static int Add<T>(ref EventDataBatch batch, T msg)
     {
       int retval = 0;
-      if (!batch.TryAdd(new EventData(BinarySerializer.Serialize(msg))))
+      var data = new EventData(BinarySerializer.Serialize(msg));
+      data.Properties.Add("Table", typeof(T).Name);
+      data.Properties.Add("Format", "json");
+      data.Properties.Add("IngestionMappingReference", $"Map{typeof(T).Name}");
+      //var back = BinarySerializer.DeserializeStreamEventSampleEvent(data);
+      if (!batch.TryAdd(data))
       {
         Console.WriteLine($"Sending #{batch.Count} messages");
         retval = batch.Count;
         eventHubClient.SendAsync(batch).Wait();
         batch = eventHubClient.CreateBatch(new BatchOptions
         {
-          MaxMessageSize = 16 * 1024,
+          MaxMessageSize = 1046528,
           PartitionKey = "default"
         });
-        if (!batch.TryAdd(new EventData(BinarySerializer.Serialize(msg))))
+        if (!batch.TryAdd(data))
+          throw new OverflowException("batch size to low");
+      }
+      return retval;
+    }
+
+    private static int Add<T>(ref EventDataBatch batch, StreamEvent<T> msg)
+    {
+      int retval = 0;
+      var data = BinarySerializer.Serialize(msg);
+      var back = BinarySerializer.DeserializeStreamEventSampleEvent(data);
+      var eventData = new EventData(data);
+      if (!batch.TryAdd(eventData))
+      {
+        Console.WriteLine($"Sending #{batch.Count} messages");
+        retval = batch.Count;
+        eventHubClient.SendAsync(batch).Wait();
+        batch = eventHubClient.CreateBatch(new BatchOptions
+        {
+          MaxMessageSize = 1046528,
+          PartitionKey = "default"
+        });
+        if (!batch.TryAdd(new EventData(data)))
           throw new OverflowException("batch size to low");
       }
       return retval;
@@ -102,7 +130,7 @@ namespace EventHubSender
         }
       }
 #else
-      for (var i = 0; i < 10000; i++)
+      for (var i = 0; i < numMessagesToSend; i++)
       {
         var uri = (1002030 + i).ToString();
         var min = 200 + ((float)rand.Next(100, 500) / 10.0f);
@@ -111,14 +139,14 @@ namespace EventHubSender
 
         var mt1 = new MeasureT1
         {
+          URI = uri,
+          Time = now,
           id = i % 15,
           Min = min,
           Max = min + (float)rand.Next(100, 500) / 10f,
           Std = 45f + (float)rand.Next(10) / 10f,
-          Time = now,
           nSample = 1000,
-          Mean = value,
-          URI = uri
+          Mean = value
         };
 
         var mt3 = new MeasureT3
@@ -139,15 +167,22 @@ namespace EventHubSender
 
         try
         {
-          var m1 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt1);
-          var m3 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt3);
-          var m4 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt4);
+          //var m1 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt1);
+          //var m3 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt3);
+          //var m4 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt4);
 
           Console.Write(".");
-          totalMessages += Add(batch, m1);
-          totalMessages += Add(batch, m3);
-          totalMessages += Add(batch, m4);
+          //totalMessages += Add(ref batch, m1);
+          //totalMessages += Add(ref batch, m3);
+          //totalMessages += Add(ref batch, m4);
+
+          totalMessages += Add(ref batch, mt1);
+          totalMessages += Add(ref batch, mt3);
+          totalMessages += Add(ref batch, mt4);
+
+
           Console.Title = totalMessages.ToString();
+
           if (totalMessages >= nextTotalMessages)
           {
             nextTotalMessages = totalMessages + 1000;
@@ -160,7 +195,7 @@ namespace EventHubSender
         }
       }
 #endif
-      Console.WriteLine($"Sending #{batch.Count} messages");
+      Console.WriteLine($"Flushing #{batch.Count} messages");
       totalMessages += batch.Count;
       await eventHubClient.SendAsync(batch);
       Console.WriteLine($"Sent total of #{totalMessages} #{messageCount} messages");

@@ -17,8 +17,7 @@ namespace EventHubReceiver
     private const string StorageAccountName = "activitystorage";
     private const string StorageAccountKey = "vLGTGdWszgmwuf6l58LuYkQfVEwNecJuag/KF/H96aQK3p5NkM6EJybKtvI4wpa5F8/mnSQCw52OieXlSPuapQ==";
 
-    internal static readonly string StorageConnectionString =
-            $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
+    internal static readonly string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
 
     public static void Main(string[] args)
     {

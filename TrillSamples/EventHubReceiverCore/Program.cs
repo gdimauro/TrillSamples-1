@@ -17,8 +17,7 @@ namespace EventHubReceiver
     private const string StorageAccountName = "activitystorage";
     private const string StorageAccountKey = "vLGTGdWszgmwuf6l58LuYkQfVEwNecJuag/KF/H96aQK3p5NkM6EJybKtvI4wpa5F8/mnSQCw52OieXlSPuapQ==";
 
-    internal static readonly string StorageConnectionString =
-            $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
+    internal static readonly string StorageConnectionString = $"DefaultEndpointsProtocol=https;AccountName={StorageAccountName};AccountKey={StorageAccountKey}";
 
     public static void Main(string[] args)
     {
@@ -37,7 +36,15 @@ namespace EventHubReceiver
           StorageContainerName);
 
       // Registers the Event Processor Host and starts receiving messages
-      await eventProcessorHost.RegisterEventProcessorAsync<EventProcessor>();
+      await eventProcessorHost.RegisterEventProcessorAsync<EventProcessor>(
+           new EventProcessorOptions()
+           {
+             InvokeProcessorAfterReceiveTimeout = true,
+             MaxBatchSize = 100,
+             PrefetchCount = 100,
+             ReceiveTimeout = TimeSpan.FromSeconds(30)
+           }
+        );
 
       Console.WriteLine("Receiving. Press enter key to stop worker.");
       Console.ReadLine();

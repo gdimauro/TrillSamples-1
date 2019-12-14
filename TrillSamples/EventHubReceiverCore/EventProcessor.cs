@@ -10,13 +10,12 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using EventHubSample.Model;
 using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.EventHubs.Processor;
 using Microsoft.StreamProcessing;
-#if USE_BLOB_STORAGE
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
-#endif
 using Newtonsoft.Json;
 using static BinarySerializer;
 
@@ -31,13 +30,10 @@ namespace EventHubReceiver
     private static readonly string StorageConnectionString = Program.StorageConnectionString;
 
     private Stopwatch checkpointStopWatch;
-#if USE_BLOB_STORAGE
     private CloudBlobContainer checkpointContainer;
-#endif
-    private Subject<StreamEvent<SampleEvent>> input;
+    private Subject<StreamEvent<Measure>> input;
     private QueryContainer queryContainer;
     private Microsoft.StreamProcessing.Process queryProcess;
-    private int ReceivedMessageCount = 0;
 
     /// <summary>
     /// Close processor for partition
@@ -63,7 +59,6 @@ namespace EventHubReceiver
       this.checkpointStopWatch = new Stopwatch();
       this.checkpointStopWatch.Start();
 
-#if USE_BLOB_STORAGE
       var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
       var blobClient = storageAccount.CreateCloudBlobClient();
       this.checkpointContainer = blobClient.GetContainerReference("checkpoints");
@@ -87,7 +82,6 @@ namespace EventHubReceiver
         }
       }
       else
-#endif
       {
         Console.WriteLine($"Clean start of query");
         CreateQuery();
@@ -111,6 +105,8 @@ namespace EventHubReceiver
       return Task.CompletedTask;
     }
 
+    static long __count = 0;
+
     /// <summary>
     /// Process events
     /// </summary>
@@ -119,35 +115,47 @@ namespace EventHubReceiver
     /// <returns></returns>
     public Task ProcessEventsAsync(PartitionContext context, IEnumerable<EventData> messages)
     {
+      EventProcessor.__count += messages.Count();
+
+      Console.Title = $"total: {EventProcessor.__count} offset: {context.ToString()} count: {messages.Count()}";
+
+#if true
+      context.CheckpointAsync();
+#else
       long lastSeq = 0;
-      Console.Title = (ReceivedMessageCount += messages.Count()).ToString();
       foreach (var eventData in messages)
       {
-        Console.Write(".");
-        var message = BinarySerializer.DeserializeStreamEventSampleEvent(eventData.Body.ToArray());
+        var message = BinarySerializer.DeserializeStreamEventSampleEvent<Measure>(eventData.Body.ToArray());
         lastSeq = eventData.SystemProperties.SequenceNumber;
-        //Task.Delay(5).Wait();
-        //this.input.OnNext(message);
+        Task.Delay(5).Wait();
+        this.input.OnNext(message);
+        //else if (message.Payload.Data is MeasureT3)
+        //{
+        //  var serializer = Newtonsoft.Json.JsonSerializer.Create();
+        //  var value = JsonConvert.DeserializeObject<StreamEvent<Measure<MeasureT3>>>(JsonConvert.SerializeObject(message));
+        //  this.input.OnNext(value);
+        //}
+        //else if (message.Payload.Data is MeasureT4)
+        //  this.input.OnNext((StreamEvent<Measure>)(object)(StreamEvent<Measure<MeasureT4>>)(object)message);
       }
+
       if (this.checkpointStopWatch.Elapsed > TimeSpan.FromSeconds(10))
       {
         Console.WriteLine("Taking checkpoint");
-#if USE_BLOB_STORAGE
         var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
         var blobClient = storageAccount.CreateCloudBlobClient();
         CloudBlobContainer container = blobClient.GetContainerReference("checkpoints");
         var blockBlob = container.GetBlockBlobReference(context.PartitionId + "-" + lastSeq);
         CloudBlobStream blobStream = blockBlob.OpenWriteAsync().GetAwaiter().GetResult();
-        Console.WriteLine($"writing blob: ${((CloudBlockBlob)blockBlob).Name}");
         this.queryProcess.Checkpoint(blobStream);
         blobStream.Flush();
         blobStream.Close();
-#endif
+
         return context
             .CheckpointAsync()
             .ContinueWith(t => DeleteOlderCheckpoints(context.PartitionId + "-" + lastSeq));
       }
-
+#endif
       return Task.CompletedTask;
     }
 
@@ -157,8 +165,8 @@ namespace EventHubReceiver
     private void CreateQuery()
     {
       this.queryContainer = new QueryContainer();
-      this.input = new Subject<StreamEvent<SampleEvent>>();
-      var inputStream = this.queryContainer.RegisterInput(
+      this.input = new Subject<StreamEvent<Measure>>();
+      var inputStream = this.queryContainer.RegisterInput<Measure>(
           this.input,
           DisorderPolicy.Drop(),
           FlushPolicy.FlushOnPunctuation,
@@ -166,7 +174,7 @@ namespace EventHubReceiver
       var query = inputStream.AlterEventDuration(StreamEvent.InfinitySyncTime).Count();
       var async = this.queryContainer.RegisterOutput(query);
       async
-        // .Where(e => e.IsStart)
+         // .Where(e => e.IsStart)
         .ForEachAsync(o => Console.WriteLine($"{o}"));
     }
 
@@ -177,30 +185,19 @@ namespace EventHubReceiver
     /// <returns></returns>
     private Task DeleteOlderCheckpoints(string checkpointFile)
     {
-#if USE_BLOB_STORAGE
       var storageAccount = CloudStorageAccount.Parse(StorageConnectionString);
       var blobClient = storageAccount.CreateCloudBlobClient();
       CloudBlobContainer container = blobClient.GetContainerReference("checkpoints");
-      var token = default(BlobContinuationToken);
-      for (
-        var result = container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 500, null, null, null).Result;
-        result.Results.Count() > 0;
-        result = container.ListBlobsSegmentedAsync(null, true, BlobListingDetails.None, 500, token, null, null).Result
-        )
+      var results = new List<IListBlobItem>();
+      var result = container.ListBlobsSegmentedAsync(null).Result;
+      var token = result.ContinuationToken;
+      foreach (var blob in container.ListBlobsSegmentedAsync(token).Result.Results)
       {
-        token = result.ContinuationToken;
-        foreach (var blob in result.Results)
+        if (((CloudBlockBlob)blob).Name != checkpointFile)
         {
-          if (((CloudBlockBlob)blob).Name != checkpointFile)
-          {
-            Console.WriteLine($"deleting blob: ${((CloudBlockBlob)blob).Name}");
-            ((CloudBlockBlob)blob).DeleteIfExistsAsync().Wait();
-          }
+          ((CloudBlockBlob)blob).DeleteIfExistsAsync().Wait();
         }
-        if (token == null)
-          break;
       }
-#endif
       this.checkpointStopWatch.Restart();
       return Task.CompletedTask;
     }
