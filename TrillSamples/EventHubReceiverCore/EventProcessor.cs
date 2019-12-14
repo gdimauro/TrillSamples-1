@@ -106,6 +106,7 @@ namespace EventHubReceiver
     }
 
     static long __count = 0;
+    static DateTime LastTime = DateTime.UtcNow;
 
     /// <summary>
     /// Process events
@@ -117,7 +118,11 @@ namespace EventHubReceiver
     {
       EventProcessor.__count += messages.Count();
 
-      Console.Title = $"total: {EventProcessor.__count} offset: {context.ToString()} count: {messages.Count()}";
+      if (DateTime.UtcNow > LastTime.AddSeconds(2))
+      {
+        LastTime = DateTime.UtcNow;
+        Console.Title = $"total: {EventProcessor.__count} offset: {context.ToString()} count: {messages.Count()}";
+      }
 
 #if true
       context.CheckpointAsync();
