@@ -170,7 +170,8 @@ namespace EventHubSender
 
         try
         {
-          Console.Write(".");
+          if (i % 10 == 0)
+            Console.Write(".");
 
           totalMessages += Add(ref batch, mt1);
           totalMessages += Add(ref batch, mt3);
