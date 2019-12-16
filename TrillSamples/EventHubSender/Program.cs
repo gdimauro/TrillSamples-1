@@ -5,6 +5,7 @@
 using System;
 using System.Threading.Tasks;
 using EventHubSample.Model;
+using Kusto.Data;
 using Microsoft.Azure.EventHubs;
 using Microsoft.StreamProcessing;
 using static BinarySerializer;
@@ -21,6 +22,12 @@ namespace EventHubSender
 
     public static void Main(string[] args)
     {
+      var authority = "1a59e398-83d8-4052-aec9-74a7d6461c5e"; // Or the AAD tenant GUID: "..."
+      var builder = new KustoConnectionStringBuilder($"https://trillsample.westeurope.kusto.windows.net");
+      builder.Authority = authority;
+      builder.UserID = "gdimauro@codearchitects.com";
+
+
       MainAsync(args).GetAwaiter().GetResult();
     }
 
@@ -45,9 +52,11 @@ namespace EventHubSender
     {
       int retval = 0;
       var data = new EventData(BinarySerializer.Serialize(msg));
+
       data.Properties.Add("Table", typeof(T).Name.Replace("MeasureT", "MeasuresT"));
       data.Properties.Add("Format", "json");
       data.Properties.Add("IngestionMappingReference", $"Map{typeof(T).Name}");
+
       //var back = BinarySerializer.DeserializeStreamEventSampleEvent(data);
       if (!batch.TryAdd(data))
       {
@@ -134,7 +143,7 @@ namespace EventHubSender
 #else
       for (var i = 0; i < numMessagesToSend; i++)
       {
-        var uri = (1002030 + 2000000 + i).ToString();
+        var uri = (1002030 + 3000000 + i).ToString();
         var min = 200 + ((float)rand.Next(100, 500) / 10.0f);
         var now = DateTime.Now;
         var value = 23f + (float)rand.Next(10) / 10f;
