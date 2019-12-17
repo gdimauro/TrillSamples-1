@@ -19,7 +19,7 @@ namespace EventHubSender
 
     public static void Main(string[] args)
     {
-      DirectIngestion.Run(1000000, true).GetAwaiter().GetResult();
+      DirectIngestion.Run(1 * 1000 * 1000, true).GetAwaiter().GetResult();
       return;
       //MainAsync(args).GetAwaiter().GetResult();
     }

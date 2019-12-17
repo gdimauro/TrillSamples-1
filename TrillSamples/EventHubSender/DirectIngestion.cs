@@ -29,8 +29,10 @@ namespace EventHubSender
     public static async Task Run(int numMessagesToSend = 100000, bool direct = true)
     {
       var tenantId = "1a59e398-83d8-4052-aec9-74a7d6461c5e";
-      var user = "gdimauro@codearchitects.com";
-      var password = "LuciaPit070769dg";
+      //var user = "gdimauro@codearchitects.com";
+      //var password = "******";
+      var clientid = "24c6b350-9b47-4e49-b794-7861cf0ce116";
+      var clientsecret = "=BYPyhmHf0efu7[-zuoOLGtsT=xcO6v3";
       var database = "trillsample";
 
       var rand = new Random((int)DateTime.Now.Ticks);
@@ -45,19 +47,23 @@ namespace EventHubSender
 
       if (direct)
       {
-        var ingestUri = "Data Source=https://trillsample.westeurope.kusto.windows.net;Initial Catalog=trillsample;User ID=gdimauro@codearchitects.com;Password=LuciaPit070769dg;AAD Federated Security=True;Authority Id=1a59e398-83d8-4052-aec9-74a7d6461c5e";
+        var ingestUri = "Data Source=https://trillsample.westeurope.kusto.windows.net;Initial Catalog=trillsample";
 
         var ingestConnectionStringBuilder = new KustoConnectionStringBuilder(ingestUri)
         {
           FederatedSecurity = true,
           InitialCatalog = database,
-
+#if false
           UserID = user,
           Password = password,
+#else
+          ApplicationClientId = clientid,
+          ApplicationKey = clientsecret,
+#endif
           Authority = tenantId
         };
 
-        using (var ingestClient = KustoIngestFactory.CreateDirectIngestClient(ingestUri))
+        using (var ingestClient = KustoIngestFactory.CreateDirectIngestClient(ingestConnectionStringBuilder))
         {
           for (var i = 1; i < numMessagesToSend; i++)
           {
@@ -107,8 +113,13 @@ namespace EventHubSender
         {
           FederatedSecurity = true,
           InitialCatalog = database,
+#if false
           UserID = user,
           Password = password,
+#else
+          ApplicationClientId = clientid,
+          ApplicationKey = clientsecret,
+#endif
           Authority = tenantId
         };
 
