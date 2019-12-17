@@ -1,4 +1,4 @@
-﻿https://hub-binder.mybinder.ovh/user/microsoft-jupyter-kqlmagic-778x2wj6/notebooks/notebooks/ParametrizeYourQuery.ipynb
+﻿
 
 .create table MeasuresT1 (URI: string, timeStamp: datetime, mean: float, std: decimal, min: float, max: float, nSample: int, ['id']: string) 
 .create table MeasuresT1 ingestion json mapping 'MapMeasureT1' '[{"column":"URI","path":"$.uri","datatype":"string"}, {"column":"timeStamp","path":"$.timeStamp","datatype":"datetime"}, {"column":"mean","path":"$.mean","datatype":"float"},{"column":"std","path":"$.std","datatype":"decimal"},{"column":"min","path":"$.min","datatype":"float"},{"column":"max","path":"$.max","datatype":"float"},{"column":"nSample","path":"$.nSample","datatype":"int"},{"column":"id","path":"$.id","datatype":"string"}]'
@@ -9,52 +9,3 @@
 .create table MeasuresT4 (URI: string, timeStamp: datetime, aw: string, code: string, flag: bool) 
 .create table MeasuresT4 ingestion json mapping 'MapMeasureT4' '[{"column":"URI","path":"$.uri","datatype":"string"}, {"column":"timeStamp","path":"$.timeStamp","datatype":"datetime"}, {"column":"aw","path":"$.aw","datatype":"string"},{"column":"code","path":"$.code","datatype":"string"},{"column":"flag","path":"$.flag","datatype":"bool"}]'
 
-
-python notebook
-
-RETRIEVE notebook lists
-
->jupyter notebook list
-Currently running servers:
-http://localhost:8888/?token=2d668f19cb2d40cbd1bbc8c68f871fd431ccec85d4ddb5d8 :: C:\Users\gdimauro
-
-[] !pip install Kqlmagic --no-cache-dir  --upgrade
-[] %reload_ext Kqlmagic
-[] %kql azureeataexplorer://cluster='trillsample.westeurope';database='trillsample';alias='test'
-
-%%kql
-MeasuresT1 | count
-
-%%kql
-MeasuresT3
-| take 100
-
-MeasuresT4
-| count
-
-MeasuresT1
-| sort by URI
-| take 100
-
-MeasuresT3
-| sort by URI
-| take 100
-
-MeasuresT3
-| sort by URI
-| where timeStamp between (now(-30m) .. now())
-| summarize min(val), max(val), avg(val), minif(val, event == 'FINE_CICLO'), minif(val, event != 'FINE_CICLO')
-
-MeasuresT4
-| sort by URI
-| where code == '1130' and timeStamp between (now(-10m) .. now(-1m)) and flag == false
-| count
-
-
-MeasuresT1
-| where timeStamp between (now(-10m) .. now())
-| join MeasuresT3 on $left.URI == $right.URI // and $left.timeStamp == $right.timeStamp
-| join MeasuresT4 on $left.URI == $right.URI
-| take 1000
-| project timeStamp, id,  val
-| render linechart title="linechart sample"

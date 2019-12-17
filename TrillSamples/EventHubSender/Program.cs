@@ -5,7 +5,6 @@
 using System;
 using System.Threading.Tasks;
 using EventHubSample.Model;
-using Kusto.Data;
 using Microsoft.Azure.EventHubs;
 using Microsoft.StreamProcessing;
 using static BinarySerializer;
@@ -18,17 +17,11 @@ namespace EventHubSender
     private const string EventHubName = "main";
     private static EventHubClient eventHubClient;
 
-    public static string[] ErrorCodes = { "0030", "0033", "0035", "0330", "0000", "1130", "0830", "3430", "7630" };
-
     public static void Main(string[] args)
     {
-      var authority = "1a59e398-83d8-4052-aec9-74a7d6461c5e"; // Or the AAD tenant GUID: "..."
-      var builder = new KustoConnectionStringBuilder($"https://trillsample.westeurope.kusto.windows.net");
-      builder.Authority = authority;
-      builder.UserID = "gdimauro@codearchitects.com";
-
-
-      MainAsync(args).GetAwaiter().GetResult();
+      DirectIngestion.Run(1000000, true).GetAwaiter().GetResult();
+      return;
+      //MainAsync(args).GetAwaiter().GetResult();
     }
 
     private static async Task MainAsync(string[] args)
@@ -40,7 +33,7 @@ namespace EventHubSender
 
       eventHubClient = EventHubClient.CreateFromConnectionString(connectionStringBuilder.ToString());
 
-      await SendMessagesToEventHub(100000000);
+      await SendMessagesToEventHub(1000000);
 
       await eventHubClient.CloseAsync();
 
@@ -52,11 +45,9 @@ namespace EventHubSender
     {
       int retval = 0;
       var data = new EventData(BinarySerializer.Serialize(msg));
-
-      data.Properties.Add("Table", typeof(T).Name.Replace("MeasureT", "MeasuresT"));
+      data.Properties.Add("Table", typeof(T).Name);
       data.Properties.Add("Format", "json");
       data.Properties.Add("IngestionMappingReference", $"Map{typeof(T).Name}");
-
       //var back = BinarySerializer.DeserializeStreamEventSampleEvent(data);
       if (!batch.TryAdd(data))
       {
@@ -143,44 +134,24 @@ namespace EventHubSender
 #else
       for (var i = 0; i < numMessagesToSend; i++)
       {
-        var uri = (1002030 + 3000000 + i).ToString();
+        var uri = (1002030 + i).ToString();
         var min = 200 + ((float)rand.Next(100, 500) / 10.0f);
         var now = DateTime.Now;
         var value = 23f + (float)rand.Next(10) / 10f;
-
-        var mt1 = new MeasureT1
-        {
-          URI = uri,
-          Time = now,
-          id = i % 15,
-          Min = min,
-          Max = min + (float)rand.Next(100, 500) / 10f,
-          Std = 45f + (float)rand.Next(10) / 10f,
-          nSample = 1000,
-          Mean = value
-        };
-
-        var mt3 = new MeasureT3
-        {
-          URI = uri,
-          Time = now,
-          Event = i % 2 == 0 ? "CARICO_PEZZI" : "FINE_CICLO",
-          Value = value
-        };
-
-        var mt4 = new MeasureT4
-        {
-          URI = uri,
-          Time = now,
-          AW = (Byte)(rand.Next(4) == 2 ? 1 : 0),
-          Code = ErrorCodes[rand.Next(ErrorCodes.Length)],
-          Flag = (Byte)(rand.Next(4) <= 2 ? 1 : 0)
-        };
+        MeasureT1 mt1 = CreateMeasureT1(rand, i, uri, min, now, value);
+        MeasureT3 mt3 = CreateMeasureT3(i, uri, now, value);
+        MeasureT4 mt4 = CreateMeasureT4(rand, uri, now);
 
         try
         {
-          if (i % 10 == 0)
-            Console.Write(".");
+          //var m1 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt1);
+          //var m3 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt3);
+          //var m4 = StreamEvent.CreateStart(DateTime.UtcNow.Ticks, mt4);
+
+          Console.Write(".");
+          //totalMessages += Add(ref batch, m1);
+          //totalMessages += Add(ref batch, m3);
+          //totalMessages += Add(ref batch, m4);
 
           totalMessages += Add(ref batch, mt1);
           totalMessages += Add(ref batch, mt3);
@@ -204,6 +175,43 @@ namespace EventHubSender
       totalMessages += batch.Count;
       await eventHubClient.SendAsync(batch);
       Console.WriteLine($"Sent total of #{totalMessages} #{messageCount} messages");
+    }
+
+    public static MeasureT4 CreateMeasureT4(Random rand, string uri, DateTime now)
+    {
+      return new MeasureT4
+      {
+        URI = uri,
+        Time = now,
+        AW = (Byte)(rand.Next(4) == 2 ? 1 : 0),
+        Flag = (Byte)(rand.Next(4) <= 2 ? 1 : 0)
+      };
+    }
+
+    public static MeasureT3 CreateMeasureT3(int i, string uri, DateTime now, float value)
+    {
+      return new MeasureT3
+      {
+        URI = uri,
+        Time = now,
+        Event = i % 2 == 0 ? "CARICO_PEZZI" : "FINE_CICLO",
+        Value = value
+      };
+    }
+
+    public static MeasureT1 CreateMeasureT1(Random rand, int i, string uri, float min, DateTime now, float value)
+    {
+      return new MeasureT1
+      {
+        URI = uri,
+        Time = now,
+        id = i % 15,
+        Min = min,
+        Max = min + (float)rand.Next(100, 500) / 10f,
+        Std = 45f + (float)rand.Next(10) / 10f,
+        nSample = 1000,
+        Mean = value
+      };
     }
   }
 }
